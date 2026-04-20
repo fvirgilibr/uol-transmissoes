@@ -151,12 +151,12 @@
   <div style="font-size:13px;color:var(--text3)" id="loading-msg">Carregando...</div>
 </div>
 
-<!-- LOGIN SCREEN -->
-<div id="login-screen" class="login-screen" style="display:none">
+<!-- LOGIN MODAL -->
+<div id="login-screen" class="modal-backdrop" style="display:none" onclick="closeLoginModalBackdrop(event)">
   <div class="login-card">
     <div class="login-logo">📺</div>
-    <div class="login-title">UOL Esporte</div>
-    <div class="login-sub">Audiência de Transmissões</div>
+    <div class="login-title">Entrar</div>
+    <div class="login-sub">Acesso somente para usuários autorizados</div>
     <div id="login-error" class="login-error"></div>
     <div class="form-group" style="margin-bottom:12px">
       <label>E-mail</label>
@@ -167,7 +167,7 @@
       <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
     <button class="btn primary" style="width:100%;justify-content:center;height:40px;font-size:14px" id="btn-login" onclick="doLogin()">Entrar</button>
-    <div style="margin-top:16px;text-align:center;font-size:12px;color:var(--text3)">Acesso somente para usuários autorizados</div>
+    <button class="btn ghost" style="width:100%;justify-content:center;height:36px;font-size:13px;margin-top:8px" id="btn-signup" onclick="doSignup()">Criar conta</button>
   </div>
 </div>
 
@@ -183,12 +183,13 @@
     </div>
     <div class="header-actions">
       <span id="sync-badge" class="sync-badge loading"><span class="sync-dot"></span><span id="sync-text">Conectando...</span></span>
+      <button id="btn-login-header" class="btn ghost" onclick="openLoginModal()" style="display:inline-flex">Entrar</button>
       <div id="user-chip" class="user-chip" style="display:none">
         <span id="user-email-label" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
         <span id="user-role-badge" class="user-chip-role"></span>
         <button class="btn sm ghost" style="height:22px;padding:0 8px;font-size:11px;border:none;background:transparent" onclick="doLogout()">Sair</button>
       </div>
-      <div id="auth-actions" style="display:none;gap:8px;display:none" class="header-actions">
+      <div id="auth-actions" style="display:none;gap:8px" class="header-actions">
         <button class="btn ghost" onclick="exportData()">⬇ Exportar</button>
         <label class="btn ghost" style="cursor:pointer">⬆ Importar<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
         <button class="btn ghost" id="btn-new-camp" onclick="openCampModal()">+ Campeonato</button>
@@ -399,46 +400,67 @@ async function doLogin(){
   btn.disabled=false;btn.textContent='Entrar';
 }
 
-async function doLogout(){
+async function doSignup(){
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-password').value;
+  const errEl=document.getElementById('login-error');
+  errEl.style.display='none';
+  if(!email||!password){errEl.textContent='Preencha e-mail e senha.';errEl.style.display='block';return;}
+  const btn=document.getElementById('btn-signup');
+  btn.disabled=true;btn.textContent='Criando...';
   try{
-    await fetch(SB_URL+'/auth/v1/logout',{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+accessToken}});
-  }catch(e){}
+    const res=await sbAuth('signup',{email,password});
+    accessToken=res.access_token;
+    currentUser=res.user;
+    saveSession({access_token:res.access_token,refresh_token:res.refresh_token,user:res.user});
+    await afterLogin();
+  }catch(e){
+    errEl.textContent=e.message;errEl.style.display='block';
+  }
+  btn.disabled=false;btn.textContent='Criar conta';
+}
+
+async function doLogout(){
+  try{await fetch(SB_URL+'/auth/v1/logout',{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+accessToken}});}catch(e){}
   accessToken=null;currentUser=null;currentProfile=null;
   clearSession();
-  document.getElementById('app').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
+  // hide edit controls, show login button
+  document.getElementById('user-chip').style.display='none';
+  document.getElementById('auth-actions').style.display='none';
+  document.getElementById('btn-login-header').style.display='inline-flex';
+  document.getElementById('tab-usuarios').style.display='none';
+  refreshCurrentTab();
+}
+function openLoginModal(){
   document.getElementById('login-email').value='';
   document.getElementById('login-password').value='';
+  document.getElementById('login-error').style.display='none';
+  document.getElementById('btn-login').disabled=false;
+  document.getElementById('btn-login').textContent='Entrar';
+  document.getElementById('login-screen').style.display='flex';
+  setTimeout(()=>document.getElementById('login-email').focus(),100);
 }
+function closeLoginModal(){document.getElementById('login-screen').style.display='none';}
+function closeLoginModalBackdrop(e){if(e.target===document.getElementById('login-screen'))closeLoginModal();}
 
 async function afterLogin(){
   document.getElementById('login-screen').style.display='none';
-  document.getElementById('loading-screen').style.display='flex';
-  document.getElementById('loading-msg').textContent='Carregando dados...';
-  // load profile
-  try{
-    const profiles=await sbFetch('profiles?id=eq.'+currentUser.id);
-    currentProfile=profiles[0]||{is_admin:false};
-  }catch(e){currentProfile={is_admin:false};}
+  try{const profiles=await sbFetch('profiles?id=eq.'+currentUser.id);currentProfile=profiles[0]||{is_admin:false};}catch(e){currentProfile={is_admin:false};}
   applyAuthUI();
-  await loadData();
-  document.getElementById('loading-screen').style.display='none';
-  document.getElementById('app').style.display='';
-  renderDashboard();
+  refreshCurrentTab();
 }
 
 function applyAuthUI(){
   const isAdmin=currentProfile?.is_admin;
-  // user chip
+  document.getElementById('btn-login-header').style.display='none';
+  document.getElementById('login-screen').style.display='none';
   const chip=document.getElementById('user-chip');
   chip.style.display='inline-flex';
   document.getElementById('user-email-label').textContent=currentUser.email;
   const roleBadge=document.getElementById('user-role-badge');
   roleBadge.textContent=isAdmin?'Admin':'Editor';
   roleBadge.className='user-chip-role '+(isAdmin?'role-admin':'role-editor');
-  // edit actions visible for all logged-in
   document.getElementById('auth-actions').style.display='flex';
-  // usuarios tab only for admin
   document.getElementById('tab-usuarios').style.display=isAdmin?'':'none';
 }
 
@@ -885,22 +907,22 @@ async function init(){
   // try to restore session
   const saved=loadSession();
   if(saved?.access_token){
-    // verify token still valid
     try{
       const res=await fetch(SB_URL+'/auth/v1/user',{headers:{apikey:SB_KEY,'Authorization':'Bearer '+saved.access_token}});
       if(res.ok){
         const user=await res.json();
         accessToken=saved.access_token;
         currentUser=user;
-        await afterLogin();
-        return;
-      }
-    }catch(e){}
-    clearSession();
+        try{const profiles=await sbFetch('profiles?id=eq.'+currentUser.id);currentProfile=profiles[0]||{is_admin:false};}catch(e){currentProfile={is_admin:false};}
+        applyAuthUI();
+      } else { clearSession(); }
+    }catch(e){ clearSession(); }
   }
-  // no valid session → show login
+  // always load data and show app (public read)
+  await loadData();
   document.getElementById('loading-screen').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='';
+  renderDashboard();
 }
 init();
 </script>

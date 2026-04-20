@@ -6,15 +6,30 @@
 <title>UOL Esporte — Audiência de Transmissões</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  :root {
-    --bg:#0e0e10; --bg2:#18181c; --bg3:#222228;
-    --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
-    --text:#f0f0f2; --text2:rgba(255,255,255,0.55); --text3:rgba(255,255,255,0.3);
-    --accent:#FF4D00; --radius:12px; --radius-sm:8px;
+  :root{
+    --bg:#0e0e10;--bg2:#18181c;--bg3:#222228;
+    --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+    --text:#f0f0f2;--text2:rgba(255,255,255,0.55);--text3:rgba(255,255,255,0.3);
+    --accent:#FF4D00;--radius:12px;--radius-sm:8px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--text);font-family:-apple-system,'Segoe UI',sans-serif;min-height:100vh}
   .shell{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+
+  /* LOADING */
+  .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999}
+  .spinner{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* LOGIN SCREEN */
+  .login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9998}
+  .login-card{background:var(--bg2);border:1px solid var(--border2);border-radius:20px;padding:36px 32px;width:min(380px,94vw)}
+  .login-logo{width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#FF4D00,#ff7a33);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 20px}
+  .login-title{font-size:18px;font-weight:700;text-align:center;margin-bottom:4px}
+  .login-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:28px}
+  .login-error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.25);color:#f87171;font-size:13px;padding:10px 14px;border-radius:8px;margin-bottom:16px;display:none}
+
+  /* HEADER */
   .header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
   .header-left{display:flex;align-items:center;gap:14px}
   .logo{width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#FF4D00,#ff7a33);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
@@ -28,11 +43,18 @@
   .sync-badge.err{color:#f87171;border-color:rgba(248,113,113,.25)}
   .sync-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
 
+  .user-chip{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:5px 12px;border-radius:100px;background:var(--bg3);border:1px solid var(--border)}
+  .user-chip-role{font-size:10px;padding:1px 7px;border-radius:100px;font-weight:700}
+  .role-admin{background:rgba(255,77,0,.2);color:#FF4D00}
+  .role-editor{background:rgba(55,138,221,.2);color:#378ADD}
+
+  /* TABS */
   .tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:24px}
   .tab{padding:9px 20px;font-size:13px;cursor:pointer;border:none;background:none;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s;font-family:inherit;letter-spacing:-.01em}
   .tab.active{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
   .tab:hover:not(.active){color:var(--text)}
 
+  /* METRICS */
   .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:24px}
   .metric{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
   .metric-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
@@ -70,7 +92,9 @@
   .btn.danger:hover{background:rgba(248,113,113,.08)}
   .btn.ghost{background:transparent;border-color:var(--border)}
   .btn.ghost:hover{background:var(--bg3)}
+  .btn:disabled{opacity:.4;cursor:default}
 
+  /* MODAL */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(4px)}
   .modal{background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:24px;width:min(540px,94vw);max-height:90vh;overflow-y:auto}
   .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
@@ -86,6 +110,7 @@
   .form-group input:focus,.form-group select:focus{border-color:var(--accent)}
   .form-group select option{background:var(--bg2)}
   .form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+  .saving-msg{display:none;text-align:center;padding:8px 0;font-size:13px;color:var(--text3)}
 
   .empty{padding:40px;text-align:center;color:var(--text3);font-size:14px}
   .table-wrap{overflow-x:auto;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius)}
@@ -105,9 +130,12 @@
   .metric-btn.active{color:#fff;border-color:transparent}
   .metric-btn:hover:not(.active){color:var(--text);border-color:var(--border2)}
 
-  .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999}
-  .spinner{width:32px;height:32px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
+  /* USERS PANE */
+  .users-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .user-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;gap:12px}
+  .user-avatar{width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--text2);flex-shrink:0}
+  .user-email{font-size:13px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .user-meta{font-size:11px;color:var(--text3);margin-top:2px}
 
   @media(max-width:600px){
     .charts-row{grid-template-columns:1fr}
@@ -120,9 +148,30 @@
 
 <div id="loading-screen" class="loading-screen">
   <div class="spinner"></div>
-  <div style="font-size:13px;color:var(--text3)">Carregando dados...</div>
+  <div style="font-size:13px;color:var(--text3)" id="loading-msg">Carregando...</div>
 </div>
 
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="login-screen" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">📺</div>
+    <div class="login-title">UOL Esporte</div>
+    <div class="login-sub">Audiência de Transmissões</div>
+    <div id="login-error" class="login-error"></div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>E-mail</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label>Senha</label>
+      <input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn primary" style="width:100%;justify-content:center;height:40px;font-size:14px" id="btn-login" onclick="doLogin()">Entrar</button>
+    <div style="margin-top:16px;text-align:center;font-size:12px;color:var(--text3)">Acesso somente para usuários autorizados</div>
+  </div>
+</div>
+
+<!-- APP -->
 <div class="shell" id="app" style="display:none">
   <div class="header">
     <div class="header-left">
@@ -134,24 +183,33 @@
     </div>
     <div class="header-actions">
       <span id="sync-badge" class="sync-badge loading"><span class="sync-dot"></span><span id="sync-text">Conectando...</span></span>
-      <button class="btn ghost" onclick="exportData()" title="Exportar backup JSON">⬇ Exportar</button>
-      <label class="btn ghost" style="cursor:pointer" title="Importar backup JSON">⬆ Importar<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
-      <button class="btn ghost" onclick="openCampModal()">+ Campeonato</button>
-      <button class="btn primary" onclick="openModal()">+ Transmissão</button>
+      <div id="user-chip" class="user-chip" style="display:none">
+        <span id="user-email-label" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <span id="user-role-badge" class="user-chip-role"></span>
+        <button class="btn sm ghost" style="height:22px;padding:0 8px;font-size:11px;border:none;background:transparent" onclick="doLogout()">Sair</button>
+      </div>
+      <div id="auth-actions" style="display:none;gap:8px;display:none" class="header-actions">
+        <button class="btn ghost" onclick="exportData()">⬇ Exportar</button>
+        <label class="btn ghost" style="cursor:pointer">⬆ Importar<input type="file" accept=".json" style="display:none" onchange="importData(event)"></label>
+        <button class="btn ghost" id="btn-new-camp" onclick="openCampModal()">+ Campeonato</button>
+        <button class="btn primary" id="btn-new-trans" onclick="openModal()">+ Transmissão</button>
+      </div>
     </div>
   </div>
 
-  <div class="tabs">
+  <div class="tabs" id="tabs-bar">
     <button class="tab active" onclick="switchTab('dashboard',this)">Dashboard</button>
     <button class="tab" onclick="switchTab('evolucao',this)">Evolução</button>
     <button class="tab" onclick="switchTab('tabela',this)">Tabela</button>
     <button class="tab" onclick="switchTab('campeonatos',this)">Campeonatos</button>
+    <button class="tab" id="tab-usuarios" style="display:none" onclick="switchTab('usuarios',this)">Usuários</button>
   </div>
 
   <div id="pane-dashboard"></div>
   <div id="pane-evolucao" style="display:none"></div>
   <div id="pane-tabela" style="display:none"></div>
   <div id="pane-campeonatos" style="display:none"></div>
+  <div id="pane-usuarios" style="display:none"></div>
 </div>
 
 <!-- MODAL TRANSMISSÃO -->
@@ -176,10 +234,7 @@
       </div>
       <div class="form-group">
         <label>Exclusivo UOL?</label>
-        <select id="f-excl">
-          <option value="Não">Não</option>
-          <option value="Sim">Sim</option>
-        </select>
+        <select id="f-excl"><option value="Não">Não</option><option value="Sim">Sim</option></select>
       </div>
       <div class="form-group">
         <label>Views</label>
@@ -194,7 +249,7 @@
         <input type="number" id="f-inscritos" placeholder="0" min="0">
       </div>
     </div>
-    <div id="modal-saving" style="display:none;text-align:center;padding:8px 0;font-size:13px;color:var(--text3)">Salvando...</div>
+    <div id="modal-saving" class="saving-msg">Salvando...</div>
     <div class="form-actions">
       <button class="btn" onclick="closeModal()">Cancelar</button>
       <button class="btn primary" id="btn-save-entry" onclick="saveEntry()">Salvar</button>
@@ -219,7 +274,7 @@
         <input type="color" id="fc-cor" value="#378ADD">
       </div>
     </div>
-    <div id="camp-saving" style="display:none;text-align:center;padding:8px 0;font-size:13px;color:var(--text3)">Salvando...</div>
+    <div id="camp-saving" class="saving-msg">Salvando...</div>
     <div class="form-actions">
       <button class="btn" onclick="closeCampModal()">Cancelar</button>
       <button class="btn primary" id="btn-save-camp" onclick="saveCamp()">Salvar</button>
@@ -227,170 +282,239 @@
   </div>
 </div>
 
+<!-- MODAL NOVO USUÁRIO (admin) -->
+<div id="user-modal-backdrop" class="modal-backdrop" style="display:none" onclick="closeUserBackdrop(event)">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header">
+      <span class="modal-title">Novo usuário</span>
+      <button class="close-btn" onclick="closeUserModal()">×</button>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" id="nu-email" placeholder="usuario@email.com">
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" id="nu-password" placeholder="mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Perfil</label>
+        <select id="nu-role">
+          <option value="false">Editor</option>
+          <option value="true">Admin</option>
+        </select>
+      </div>
+    </div>
+    <div id="user-saving" class="saving-msg">Criando usuário...</div>
+    <div id="user-error" class="login-error" style="margin-top:12px"></div>
+    <div class="form-actions">
+      <button class="btn" onclick="closeUserModal()">Cancelar</button>
+      <button class="btn primary" id="btn-save-user" onclick="saveNewUser()">Criar usuário</button>
+    </div>
+  </div>
+</div>
+
 <script>
-// ─── SUPABASE CONFIG ──────────────────────────────────────────────────────────
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
 const SB_URL = 'https://ucnooobcuhywylwpntel.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjbm9vb2JjdWh5d3lsd3BudGVsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2NTY2MjEsImV4cCI6MjA5MjIzMjYyMX0.Nssa-HQSBLeWaQUUpAT5g5og_D89loab9KNEdhQaCas';
 
-const sbHeaders = {
-  'Content-Type': 'application/json',
-  'apikey': SB_KEY,
-  'Authorization': 'Bearer ' + SB_KEY,
-  'Prefer': 'return=representation'
-};
-
-async function sbFetch(path, options={}) {
-  const method = options.method || 'GET';
-  const isDelete = method === 'DELETE';
-  const res = await fetch(SB_URL + '/rest/v1/' + path, {
-    ...options,
-    headers: {
-      ...sbHeaders,
-      ...(isDelete ? {'Prefer':'return=minimal'} : {}),
-      ...(options.headers||{})
-    }
-  });
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err);
-  }
-  if (isDelete || res.status === 204) return [];
-  const text = await res.text();
-  return text ? JSON.parse(text) : [];
-}
-
 // ─── STATE ────────────────────────────────────────────────────────────────────
-const STORAGE_KEY = 'uol_esporte_transmissoes_v1';
-const CAMPS_KEY   = 'uol_esporte_campeonatos_v1';
-
-const DEFAULT_CAMPS = [
-  {nome:'Libertadores Sub-20',cor:'#378ADD'},
-  {nome:'NBB',cor:'#63a022'},
-  {nome:'LBF',cor:'#e09020'},
-  {nome:'Sul-Americana',cor:'#D4537E'},
-  {nome:'Copa do Brasil',cor:'#7F77DD'},
-  {nome:'Brasileirão',cor:'#1D9E75'},
-];
-
-const SEED = [
-  {camp:"NBB",trans:"Pinheiros x Fortaleza",data:"2026-03-07",views:12941,pico:1788,exclusivo:"Sim",inscritos:67},
-  {camp:"Libertadores Sub-20",trans:"Medellin x Bolivar",data:"2026-03-07",views:24719,pico:2113,exclusivo:"Não",inscritos:216},
-  {camp:"Libertadores Sub-20",trans:"Flamengo x Mérida",data:"2026-03-07",views:52996,pico:4080,exclusivo:"Não",inscritos:227},
-  {camp:"Libertadores Sub-20",trans:"Sporting Cristal x Olimpia",data:"2026-03-08",views:2725,pico:35,exclusivo:"Não",inscritos:6},
-  {camp:"Libertadores Sub-20",trans:"Palmeiras x Universidad Católica",data:"2026-03-08",views:5310,pico:140,exclusivo:"Não",inscritos:7},
-  {camp:"Libertadores Sub-20",trans:"Belgrano x LDU",data:"2026-03-09",views:5502,pico:265,exclusivo:"Não",inscritos:19},
-  {camp:"Libertadores Sub-20",trans:"Nacional x Wanderers",data:"2026-03-09",views:8102,pico:513,exclusivo:"Não",inscritos:42},
-  {camp:"Libertadores Sub-20",trans:"Bolivar x Flamengo",data:"2026-03-10",views:44935,pico:3932,exclusivo:"Não",inscritos:350},
-  {camp:"Libertadores Sub-20",trans:"Medellin x Mérida",data:"2026-03-10",views:6526,pico:447,exclusivo:"Não",inscritos:14},
-  {camp:"Libertadores Sub-20",trans:"Olimpia x Palmeiras",data:"2026-03-11",views:45549,pico:4206,exclusivo:"Não",inscritos:155},
-  {camp:"Libertadores Sub-20",trans:"Sporting Cristal x Universidad Católica",data:"2026-03-11",views:4195,pico:433,exclusivo:"Não",inscritos:14},
-  {camp:"Libertadores Sub-20",trans:"Nacional x LDU",data:"2026-03-12",views:2857,pico:89,exclusivo:"Não",inscritos:5},
-  {camp:"Libertadores Sub-20",trans:"Wanderers x Belgrano",data:"2026-03-12",views:2164,pico:53,exclusivo:"Não",inscritos:5},
-  {camp:"Libertadores Sub-20",trans:"Mérida x Bolivar",data:"2026-03-13",views:9421,pico:671,exclusivo:"Não",inscritos:30},
-  {camp:"LBF",trans:"Maringá x Sesi Araraquara",data:"2026-03-13",views:5950,pico:510,exclusivo:"Sim",inscritos:15},
-  {camp:"Libertadores Sub-20",trans:"Flamengo x Medellín",data:"2026-03-14",views:37909,pico:3890,exclusivo:"Não",inscritos:126},
-  {camp:"Libertadores Sub-20",trans:"Palmeiras x Sporting Cristal",data:"2026-03-14",views:30683,pico:3289,exclusivo:"Não",inscritos:46},
-  {camp:"Libertadores Sub-20",trans:"Universidad Católica x Olimpia",data:"2026-03-14",views:13211,pico:544,exclusivo:"Não",inscritos:56},
-  {camp:"NBB",trans:"Botafogo x Pinheiros",data:"2026-03-14",views:13084,pico:1431,exclusivo:"Sim",inscritos:76},
-  {camp:"Libertadores Sub-20",trans:"Flamengo x Olimpia",data:"2026-03-14",views:76496,pico:9923,exclusivo:"Não",inscritos:328},
-  {camp:"Libertadores Sub-20",trans:"Palmeiras x Wanderers",data:"2026-03-14",views:79675,pico:10604,exclusivo:"Não",inscritos:150},
-  {camp:"LBF",trans:"Sodiê Mesquita x Pontz São José",data:"2026-03-20",views:6135,pico:550,exclusivo:"Sim",inscritos:24},
-  {camp:"Libertadores Sub-20",trans:"Olimpia x Palmeiras",data:"2026-03-20",views:53571,pico:5014,exclusivo:"Não",inscritos:88},
-  {camp:"Libertadores Sub-20",trans:"Flamengo x Wanderers",data:"2026-03-20",views:270854,pico:44499,exclusivo:"Não",inscritos:615},
-  {camp:"LBF",trans:"Salvador Basketball x Sodiê Mesquita",data:"2026-03-27",views:6359,pico:627,exclusivo:"Sim",inscritos:34}
-];
-
 let data=[], camps=[], chartInstances={};
 let editId=null, editCampNome=null, activeTab='dashboard', evoMetric='views';
+let currentUser=null, currentProfile=null, accessToken=null;
 
-// ─── SYNC STATUS ──────────────────────────────────────────────────────────────
-function setSyncStatus(state, msg) {
-  const badge = document.getElementById('sync-badge');
-  const text  = document.getElementById('sync-text');
-  if (!badge) return;
-  badge.className = 'sync-badge ' + state;
-  text.textContent = msg;
+const STORAGE_KEY='uol_esporte_transmissoes_v1';
+const CAMPS_KEY='uol_esporte_campeonatos_v1';
+const SESSION_KEY='uol_esporte_session';
+
+const DEFAULT_CAMPS=[
+  {nome:'Libertadores Sub-20',cor:'#378ADD'},{nome:'NBB',cor:'#63a022'},
+  {nome:'LBF',cor:'#e09020'},{nome:'Sul-Americana',cor:'#D4537E'},
+  {nome:'Copa do Brasil',cor:'#7F77DD'},{nome:'Brasileirão',cor:'#1D9E75'},
+];
+
+// ─── AUTH HEADERS ─────────────────────────────────────────────────────────────
+function getHeaders(extra={}){
+  const h={'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+(accessToken||SB_KEY)};
+  return {...h,...extra};
 }
 
-// ─── LOCAL CACHE ──────────────────────────────────────────────────────────────
-function cacheData()  { try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}catch(e){} }
-function cacheCamps() { try{localStorage.setItem(CAMPS_KEY,JSON.stringify(camps));}catch(e){} }
-function loadCache()  {
-  try{const r=localStorage.getItem(STORAGE_KEY); if(r) data=JSON.parse(r);}catch(e){}
-  try{const r=localStorage.getItem(CAMPS_KEY);   if(r) camps=JSON.parse(r);}catch(e){}
+// ─── SUPABASE FETCH ───────────────────────────────────────────────────────────
+async function sbFetch(path,options={}){
+  const method=options.method||'GET';
+  const isDelete=method==='DELETE';
+  const res=await fetch(SB_URL+'/rest/v1/'+path,{
+    ...options,
+    headers:{...getHeaders(),...(isDelete?{'Prefer':'return=minimal'}:{}),...(options.headers||{})}
+  });
+  if(!res.ok){const err=await res.text();throw new Error(err);}
+  if(isDelete||res.status===204) return [];
+  const text=await res.text();
+  return text?JSON.parse(text):[];
 }
 
-// ─── SUPABASE LOAD ────────────────────────────────────────────────────────────
-async function loadFromSupabase() {
+async function sbAuth(path,body){
+  const res=await fetch(SB_URL+'/auth/v1/'+path,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','apikey':SB_KEY},
+    body:JSON.stringify(body)
+  });
+  const json=await res.json();
+  if(!res.ok) throw new Error(json.error_description||json.message||'Erro de autenticação');
+  return json;
+}
+
+// ─── SESSION ──────────────────────────────────────────────────────────────────
+function saveSession(session){
+  try{localStorage.setItem(SESSION_KEY,JSON.stringify(session));}catch(e){}
+}
+function loadSession(){
+  try{const s=localStorage.getItem(SESSION_KEY);return s?JSON.parse(s):null;}catch(e){return null;}
+}
+function clearSession(){
+  try{localStorage.removeItem(SESSION_KEY);}catch(e){}
+}
+
+// ─── LOGIN / LOGOUT ───────────────────────────────────────────────────────────
+async function doLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const password=document.getElementById('login-password').value;
+  const errEl=document.getElementById('login-error');
+  const btn=document.getElementById('btn-login');
+  errEl.style.display='none';
+  if(!email||!password){errEl.textContent='Preencha e-mail e senha.';errEl.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Entrando...';
+  try{
+    const res=await sbAuth('token?grant_type=password',{email,password});
+    accessToken=res.access_token;
+    currentUser=res.user;
+    saveSession({access_token:res.access_token,refresh_token:res.refresh_token,user:res.user});
+    await afterLogin();
+  }catch(e){
+    errEl.textContent=e.message==='Invalid login credentials'?'E-mail ou senha incorretos.':e.message;
+    errEl.style.display='block';
+  }
+  btn.disabled=false;btn.textContent='Entrar';
+}
+
+async function doLogout(){
+  try{
+    await fetch(SB_URL+'/auth/v1/logout',{method:'POST',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+accessToken}});
+  }catch(e){}
+  accessToken=null;currentUser=null;currentProfile=null;
+  clearSession();
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-email').value='';
+  document.getElementById('login-password').value='';
+}
+
+async function afterLogin(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('loading-screen').style.display='flex';
+  document.getElementById('loading-msg').textContent='Carregando dados...';
+  // load profile
+  try{
+    const profiles=await sbFetch('profiles?id=eq.'+currentUser.id);
+    currentProfile=profiles[0]||{is_admin:false};
+  }catch(e){currentProfile={is_admin:false};}
+  applyAuthUI();
+  await loadData();
+  document.getElementById('loading-screen').style.display='none';
+  document.getElementById('app').style.display='';
+  renderDashboard();
+}
+
+function applyAuthUI(){
+  const isAdmin=currentProfile?.is_admin;
+  // user chip
+  const chip=document.getElementById('user-chip');
+  chip.style.display='inline-flex';
+  document.getElementById('user-email-label').textContent=currentUser.email;
+  const roleBadge=document.getElementById('user-role-badge');
+  roleBadge.textContent=isAdmin?'Admin':'Editor';
+  roleBadge.className='user-chip-role '+(isAdmin?'role-admin':'role-editor');
+  // edit actions visible for all logged-in
+  document.getElementById('auth-actions').style.display='flex';
+  // usuarios tab only for admin
+  document.getElementById('tab-usuarios').style.display=isAdmin?'':'none';
+}
+
+// ─── DATA LOAD ────────────────────────────────────────────────────────────────
+async function loadData(){
   setSyncStatus('loading','Carregando...');
-  try {
-    const [rows, campRows] = await Promise.all([
+  try{
+    const [rows,campRows]=await Promise.all([
       sbFetch('transmissoes?select=*&order=data.asc,id.asc'),
       sbFetch('campeonatos?select=*&order=nome.asc')
     ]);
-
-    // normalise field names from DB
-    data = rows.map(r => ({
-      id: r.id,
-      camp: r.camp,
-      trans: r.trans,
-      data: r.data,
-      views: r.views,
-      pico: r.pico,
-      exclusivo: r.exclusivo,
-      inscritos: r.inscritos
-    }));
-
-    if (campRows.length > 0) {
-      camps = campRows.map(r => ({ nome: r.nome, cor: r.cor }));
-    } else {
-      // first run: seed default camps
-      camps = DEFAULT_CAMPS.map(c=>({...c}));
-      await seedCamps();
-    }
-
-    // if DB is empty, seed the initial data
-    if (data.length === 0) {
-      await seedTransmissoes();
-    }
-
-    cacheData(); cacheCamps();
-    setSyncStatus('ok', 'Sincronizado');
-  } catch(e) {
-    console.error('Supabase load error:', e);
+    data=rows.map(r=>({id:r.id,camp:r.camp,trans:r.trans,data:r.data,views:r.views,pico:r.pico,exclusivo:r.exclusivo,inscritos:r.inscritos}));
+    camps=campRows.length?campRows.map(r=>({nome:r.nome,cor:r.cor})):DEFAULT_CAMPS.map(c=>({...c}));
+    if(campRows.length===0) await seedCamps();
+    if(data.length===0) await seedTransmissoes();
+    cacheData();cacheCamps();
+    setSyncStatus('ok','Sincronizado');
+  }catch(e){
+    console.error('loadData error:',e);
     setSyncStatus('err','Offline — usando cache');
-    loadCache();
-    if (!camps.length) camps = DEFAULT_CAMPS.map(c=>({...c}));
+    try{const r=localStorage.getItem(STORAGE_KEY);if(r)data=JSON.parse(r);}catch(e2){}
+    try{const r=localStorage.getItem(CAMPS_KEY);if(r)camps=JSON.parse(r);}catch(e2){}
+    if(!camps.length)camps=DEFAULT_CAMPS.map(c=>({...c}));
   }
 }
 
-async function seedCamps() {
-  try {
-    await sbFetch('campeonatos', {
-      method:'POST',
-      body: JSON.stringify(DEFAULT_CAMPS.map(c=>({nome:c.nome,cor:c.cor})))
-    });
-  } catch(e) { console.error('seedCamps error',e); }
+async function seedCamps(){
+  try{await sbFetch('campeonatos',{method:'POST',body:JSON.stringify(DEFAULT_CAMPS.map(c=>({nome:c.nome,cor:c.cor})))});}catch(e){}
 }
-
-async function seedTransmissoes() {
-  try {
-    const rows = SEED.map(d=>({camp:d.camp,trans:d.trans,data:d.data,views:d.views,pico:d.pico,exclusivo:d.exclusivo,inscritos:d.inscritos}));
-    const inserted = await sbFetch('transmissoes', { method:'POST', body: JSON.stringify(rows) });
-    data = inserted.map(r=>({id:r.id,camp:r.camp,trans:r.trans,data:r.data,views:r.views,pico:r.pico,exclusivo:r.exclusivo,inscritos:r.inscritos}));
+async function seedTransmissoes(){
+  const SEED=[
+    {camp:"NBB",trans:"Pinheiros x Fortaleza",data:"2026-03-07",views:12941,pico:1788,exclusivo:"Sim",inscritos:67},
+    {camp:"Libertadores Sub-20",trans:"Medellin x Bolivar",data:"2026-03-07",views:24719,pico:2113,exclusivo:"Não",inscritos:216},
+    {camp:"Libertadores Sub-20",trans:"Flamengo x Mérida",data:"2026-03-07",views:52996,pico:4080,exclusivo:"Não",inscritos:227},
+    {camp:"Libertadores Sub-20",trans:"Sporting Cristal x Olimpia",data:"2026-03-08",views:2725,pico:35,exclusivo:"Não",inscritos:6},
+    {camp:"Libertadores Sub-20",trans:"Palmeiras x Universidad Católica",data:"2026-03-08",views:5310,pico:140,exclusivo:"Não",inscritos:7},
+    {camp:"Libertadores Sub-20",trans:"Belgrano x LDU",data:"2026-03-09",views:5502,pico:265,exclusivo:"Não",inscritos:19},
+    {camp:"Libertadores Sub-20",trans:"Nacional x Wanderers",data:"2026-03-09",views:8102,pico:513,exclusivo:"Não",inscritos:42},
+    {camp:"Libertadores Sub-20",trans:"Bolivar x Flamengo",data:"2026-03-10",views:44935,pico:3932,exclusivo:"Não",inscritos:350},
+    {camp:"Libertadores Sub-20",trans:"Medellin x Mérida",data:"2026-03-10",views:6526,pico:447,exclusivo:"Não",inscritos:14},
+    {camp:"Libertadores Sub-20",trans:"Olimpia x Palmeiras",data:"2026-03-11",views:45549,pico:4206,exclusivo:"Não",inscritos:155},
+    {camp:"Libertadores Sub-20",trans:"Sporting Cristal x Universidad Católica",data:"2026-03-11",views:4195,pico:433,exclusivo:"Não",inscritos:14},
+    {camp:"Libertadores Sub-20",trans:"Nacional x LDU",data:"2026-03-12",views:2857,pico:89,exclusivo:"Não",inscritos:5},
+    {camp:"Libertadores Sub-20",trans:"Wanderers x Belgrano",data:"2026-03-12",views:2164,pico:53,exclusivo:"Não",inscritos:5},
+    {camp:"Libertadores Sub-20",trans:"Mérida x Bolivar",data:"2026-03-13",views:9421,pico:671,exclusivo:"Não",inscritos:30},
+    {camp:"LBF",trans:"Maringá x Sesi Araraquara",data:"2026-03-13",views:5950,pico:510,exclusivo:"Sim",inscritos:15},
+    {camp:"Libertadores Sub-20",trans:"Flamengo x Medellín",data:"2026-03-14",views:37909,pico:3890,exclusivo:"Não",inscritos:126},
+    {camp:"Libertadores Sub-20",trans:"Palmeiras x Sporting Cristal",data:"2026-03-14",views:30683,pico:3289,exclusivo:"Não",inscritos:46},
+    {camp:"Libertadores Sub-20",trans:"Universidad Católica x Olimpia",data:"2026-03-14",views:13211,pico:544,exclusivo:"Não",inscritos:56},
+    {camp:"NBB",trans:"Botafogo x Pinheiros",data:"2026-03-14",views:13084,pico:1431,exclusivo:"Sim",inscritos:76},
+    {camp:"Libertadores Sub-20",trans:"Flamengo x Olimpia",data:"2026-03-14",views:76496,pico:9923,exclusivo:"Não",inscritos:328},
+    {camp:"Libertadores Sub-20",trans:"Palmeiras x Wanderers",data:"2026-03-14",views:79675,pico:10604,exclusivo:"Não",inscritos:150},
+    {camp:"LBF",trans:"Sodiê Mesquita x Pontz São José",data:"2026-03-20",views:6135,pico:550,exclusivo:"Sim",inscritos:24},
+    {camp:"Libertadores Sub-20",trans:"Olimpia x Palmeiras",data:"2026-03-20",views:53571,pico:5014,exclusivo:"Não",inscritos:88},
+    {camp:"Libertadores Sub-20",trans:"Flamengo x Wanderers",data:"2026-03-20",views:270854,pico:44499,exclusivo:"Não",inscritos:615},
+    {camp:"LBF",trans:"Salvador Basketball x Sodiê Mesquita",data:"2026-03-27",views:6359,pico:627,exclusivo:"Sim",inscritos:34}
+  ];
+  try{
+    const inserted=await sbFetch('transmissoes',{method:'POST',body:JSON.stringify(SEED)});
+    data=inserted.map(r=>({id:r.id,camp:r.camp,trans:r.trans,data:r.data,views:r.views,pico:r.pico,exclusivo:r.exclusivo,inscritos:r.inscritos}));
     cacheData();
-  } catch(e) { console.error('seedTransmissoes error',e); }
+  }catch(e){console.error('seedTransmissoes error:',e);}
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
-function fmt(n)  { return Number(n).toLocaleString('pt-BR'); }
-function fmtK(n) { return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':fmt(n); }
-function getCampColor(nome){ const c=camps.find(c=>c.nome===nome); return c?c.cor:autoColor(nome); }
-function autoColor(nome){ const hues=[210,140,30,330,260,170,50,300];let h=0;for(let i=0;i<nome.length;i++)h=(h+nome.charCodeAt(i))%hues.length;return`hsl(${hues[h]},55%,55%)`; }
-function destroyCharts(){ Object.values(chartInstances).forEach(c=>{try{c.destroy();}catch(e){}});chartInstances={}; }
-const gridColor='rgba(255,255,255,0.06)', tickColor='rgba(255,255,255,0.4)';
+function fmt(n){return Number(n).toLocaleString('pt-BR');}
+function fmtK(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(1)+'K':fmt(n);}
+function getCampColor(nome){const c=camps.find(c=>c.nome===nome);return c?c.cor:autoColor(nome);}
+function autoColor(nome){const hues=[210,140,30,330,260,170,50,300];let h=0;for(let i=0;i<nome.length;i++)h=(h+nome.charCodeAt(i))%hues.length;return`hsl(${hues[h]},55%,55%)`;}
+function destroyCharts(){Object.values(chartInstances).forEach(c=>{try{c.destroy();}catch(e){}});chartInstances={};}
+function cacheData(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}catch(e){}}
+function cacheCamps(){try{localStorage.setItem(CAMPS_KEY,JSON.stringify(camps));}catch(e){}}
+function setSyncStatus(state,msg){const b=document.getElementById('sync-badge');const t=document.getElementById('sync-text');if(!b)return;b.className='sync-badge '+state;t.textContent=msg;}
+function refreshCurrentTab(){if(activeTab==='dashboard')renderDashboard();else if(activeTab==='evolucao')renderEvolucao();else if(activeTab==='tabela')renderTabela();else if(activeTab==='campeonatos')renderCampeonatos();else renderUsuarios();}
+const gridColor='rgba(255,255,255,0.06)',tickColor='rgba(255,255,255,0.4)';
 const metricLabels={views:'Views',pico:'Pico ao vivo',inscritos:'Novos inscritos'};
-function refreshCurrentTab(){ if(activeTab==='dashboard') renderDashboard(); else if(activeTab==='evolucao') renderEvolucao(); else if(activeTab==='tabela') renderTabela(); else renderCampeonatos(); }
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function renderDashboard(){
@@ -422,18 +546,17 @@ function renderDashboard(){
     </div>
     <div class="charts-row">
       <div class="chart-card" style="margin-bottom:0"><div class="section-title">Views totais por campeonato</div><div class="chart-wrap" style="height:${vcH}px"><canvas id="c-vc" role="img" aria-label="Views por campeonato"></canvas></div></div>
-      <div class="chart-card" style="margin-bottom:0"><div class="section-title">Pico médio ao vivo por campeonato</div><div class="chart-wrap" style="height:${vcH}px"><canvas id="c-pc" role="img" aria-label="Pico médio por campeonato"></canvas></div></div>
+      <div class="chart-card" style="margin-bottom:0"><div class="section-title">Pico médio ao vivo por campeonato</div><div class="chart-wrap" style="height:${vcH}px"><canvas id="c-pc" role="img" aria-label="Pico médio"></canvas></div></div>
     </div>
     <div style="margin-bottom:16px"></div>
     <div class="chart-card"><div class="section-title">Top 5 transmissões — views</div><div class="chart-wrap" style="height:${top5.length*46+40}px"><canvas id="c-t5" role="img" aria-label="Top 5"></canvas></div></div>
-    <div class="chart-card"><div class="section-title">Views acumulados por data</div><div class="chart-wrap" style="height:210px"><canvas id="c-tl" role="img" aria-label="Timeline views"></canvas></div></div>
+    <div class="chart-card"><div class="section-title">Views acumulados por data</div><div class="chart-wrap" style="height:210px"><canvas id="c-tl" role="img" aria-label="Timeline"></canvas></div></div>
   `;
-
   const barOpts=(suffix)=>({indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)} ${suffix}`}}},scales:{x:{ticks:{color:tickColor,font:{size:11},callback:v=>fmtK(v)},grid:{color:gridColor}},y:{ticks:{color:tickColor,font:{size:12}},grid:{display:false}}}});
   chartInstances.vc=new Chart(document.getElementById('c-vc'),{type:'bar',data:{labels:cs,datasets:[{data:cs.map(c=>bycamp[c].views),backgroundColor:cs.map(getCampColor),borderRadius:4}]},options:barOpts('views')});
   chartInstances.pc=new Chart(document.getElementById('c-pc'),{type:'bar',data:{labels:cs,datasets:[{data:cs.map(c=>bycamp[c].picoMedia),backgroundColor:cs.map(getCampColor),borderRadius:4}]},options:barOpts('pico médio')});
-  chartInstances.t5=new Chart(document.getElementById('c-t5'),{type:'bar',data:{labels:top5.map(d=>d.trans.length>35?d.trans.slice(0,33)+'…':d.trans),datasets:[{label:'Views',data:top5.map(d=>d.views),backgroundColor:top5.map(d=>getCampColor(d.camp)),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)} views`}}},scales:{x:{ticks:{color:tickColor,font:{size:11},callback:v=>fmtK(v)},grid:{color:gridColor}},y:{ticks:{color:tickColor,font:{size:12}},grid:{display:false}}}}});
-  chartInstances.tl=new Chart(document.getElementById('c-tl'),{type:'bar',data:{labels:dates.map(d=>{const[y,m,day]=d.split('-');return`${day}/${m}`;}),datasets:[{label:'Views',data:dates.map(d=>byDate[d]),backgroundColor:'#378ADD',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)} views`}}},scales:{x:{ticks:{color:tickColor,font:{size:11},autoSkip:false,maxRotation:45},grid:{display:false}},y:{ticks:{color:tickColor,font:{size:11},callback:v=>fmtK(v)},grid:{color:gridColor}}}}});
+  chartInstances.t5=new Chart(document.getElementById('c-t5'),{type:'bar',data:{labels:top5.map(d=>d.trans.length>35?d.trans.slice(0,33)+'…':d.trans),datasets:[{data:top5.map(d=>d.views),backgroundColor:top5.map(d=>getCampColor(d.camp)),borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)} views`}}},scales:{x:{ticks:{color:tickColor,font:{size:11},callback:v=>fmtK(v)},grid:{color:gridColor}},y:{ticks:{color:tickColor,font:{size:12}},grid:{display:false}}}}});
+  chartInstances.tl=new Chart(document.getElementById('c-tl'),{type:'bar',data:{labels:dates.map(d=>{const[y,m,day]=d.split('-');return`${day}/${m}`;}),datasets:[{data:dates.map(d=>byDate[d]),backgroundColor:'#378ADD',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmt(ctx.raw)} views`}}},scales:{x:{ticks:{color:tickColor,font:{size:11},autoSkip:false,maxRotation:45},grid:{display:false}},y:{ticks:{color:tickColor,font:{size:11},callback:v=>fmtK(v)},grid:{color:gridColor}}}}});
 }
 
 // ─── EVOLUÇÃO ─────────────────────────────────────────────────────────────────
@@ -444,74 +567,40 @@ function renderEvolucao(){
   const mk=evoMetric;
   const allDates=[...new Set(data.map(d=>d.data))].sort();
   const dateLabels=allDates.map(d=>{const[y,m,day]=d.split('-');return`${day}/${m}`;});
-
-  function makeCampDatasets(){
-    return campNames.map(camp=>{
-      const byDate={};
-      data.filter(d=>d.camp===camp).forEach(d=>{byDate[d.data]=(byDate[d.data]||0)+d[mk];});
-      return{label:camp,data:allDates.map(dt=>byDate[dt]??null),borderColor:getCampColor(camp),backgroundColor:getCampColor(camp)+'33',tension:.35,pointRadius:5,pointHoverRadius:7,spanGaps:false,fill:false};
-    });
-  }
-  function makeCumDatasets(){
-    return campNames.map(camp=>{
-      const byDate={};
-      data.filter(d=>d.camp===camp).forEach(d=>{byDate[d.data]=(byDate[d.data]||0)+d[mk];});
-      let cum=0;
-      return{label:camp,data:allDates.map(dt=>{cum+=(byDate[dt]||0);return cum;}),borderColor:getCampColor(camp),backgroundColor:getCampColor(camp)+'22',tension:.35,pointRadius:4,fill:false};
-    });
-  }
-
-  const metricBtns=['views','pico','inscritos'].map(m=>`<button class="metric-btn${evoMetric===m?' active':''}" style="${evoMetric===m?'background:'+getCampColor(campNames[0])+';':''}" onclick="setEvoMetric('${m}',this)">${metricLabels[m]}</button>`).join('');
+  function makeCampDatasets(){return campNames.map(camp=>{const byDate={};data.filter(d=>d.camp===camp).forEach(d=>{byDate[d.data]=(byDate[d.data]||0)+d[mk];});return{label:camp,data:allDates.map(dt=>byDate[dt]??null),borderColor:getCampColor(camp),backgroundColor:getCampColor(camp)+'33',tension:.35,pointRadius:5,pointHoverRadius:7,spanGaps:false,fill:false};});}
+  function makeCumDatasets(){return campNames.map(camp=>{const byDate={};data.filter(d=>d.camp===camp).forEach(d=>{byDate[d.data]=(byDate[d.data]||0)+d[mk];});let cum=0;return{label:camp,data:allDates.map(dt=>{cum+=(byDate[dt]||0);return cum;}),borderColor:getCampColor(camp),backgroundColor:getCampColor(camp)+'22',tension:.35,pointRadius:4,fill:false};});}
+  const metricBtns=['views','pico','inscritos'].map(m=>`<button class="metric-btn${evoMetric===m?' active':''}" style="${evoMetric===m?'background:'+getCampColor(campNames[0])+';':''}" onclick="setEvoMetric('${m}')">${metricLabels[m]}</button>`).join('');
   const legendHtml=campNames.map(c=>`<div class="legend-item"><div class="legend-dot" style="background:${getCampColor(c)}"></div>${c}</div>`).join('');
-
-  const perCampHtml=campNames.map((camp,idx)=>{
-    const rows=data.filter(d=>d.camp===camp).sort((a,b)=>a.data.localeCompare(b.data));
-    return`<div class="chart-card">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-        <span style="width:10px;height:10px;border-radius:50%;background:${getCampColor(camp)};display:inline-block;flex-shrink:0"></span>
-        <div class="section-title" style="margin-bottom:0">${camp}</div>
-        <span style="font-size:11px;color:var(--text3);margin-left:auto">${rows.length} transmissão(ões) · total: ${fmtK(rows.reduce((a,d)=>a+d[mk],0))}</span>
-      </div>
-      <div class="chart-wrap" style="height:200px"><canvas id="c-camp-${idx}" role="img" aria-label="${camp} ${metricLabels[mk]}"></canvas></div>
-    </div>`;
-  }).join('');
-
+  const perCampHtml=campNames.map((camp,idx)=>{const rows=data.filter(d=>d.camp===camp).sort((a,b)=>a.data.localeCompare(b.data));return`<div class="chart-card"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="width:10px;height:10px;border-radius:50%;background:${getCampColor(camp)};display:inline-block;flex-shrink:0"></span><div class="section-title" style="margin-bottom:0">${camp}</div><span style="font-size:11px;color:var(--text3);margin-left:auto">${rows.length} live(s) · total: ${fmtK(rows.reduce((a,d)=>a+d[mk],0))}</span></div><div class="chart-wrap" style="height:200px"><canvas id="c-camp-${idx}" role="img" aria-label="${camp}"></canvas></div></div>`;}).join('');
   document.getElementById('pane-evolucao').innerHTML=`
     <div class="evo-controls"><span style="font-size:12px;color:var(--text3);margin-right:4px">Métrica:</span>${metricBtns}</div>
-    <div class="chart-card"><div class="section-title">${metricLabels[mk]} por transmissão — comparativo</div><div class="legend">${legendHtml}</div><div class="chart-wrap" style="height:290px"><canvas id="c-evo-all" role="img" aria-label="Evolução comparativa"></canvas></div></div>
+    <div class="chart-card"><div class="section-title">${metricLabels[mk]} por transmissão — comparativo</div><div class="legend">${legendHtml}</div><div class="chart-wrap" style="height:290px"><canvas id="c-evo-all" role="img" aria-label="Comparativo"></canvas></div></div>
     <div class="chart-card"><div class="section-title">${metricLabels[mk]} acumulado por campeonato</div><div class="legend">${legendHtml}</div><div class="chart-wrap" style="height:260px"><canvas id="c-evo-cum" role="img" aria-label="Acumulado"></canvas></div></div>
-    <div class="section-title" style="margin-bottom:16px">Detalhe por campeonato — ${metricLabels[mk]}</div>
-    ${perCampHtml}
+    <div class="section-title" style="margin-bottom:16px">Detalhe por campeonato — ${metricLabels[mk]}</div>${perCampHtml}
   `;
-
   const lineOpts={responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${fmt(ctx.raw??0)}`}}},scales:{x:{ticks:{color:tickColor,font:{size:11},autoSkip:false,maxRotation:45},grid:{display:false}},y:{ticks:{color:tickColor,font:{size:11},callback:v=>fmtK(v)},grid:{color:gridColor}}}};
   chartInstances['ea']=new Chart(document.getElementById('c-evo-all'),{type:'line',data:{labels:dateLabels,datasets:makeCampDatasets()},options:lineOpts});
   chartInstances['ec']=new Chart(document.getElementById('c-evo-cum'),{type:'line',data:{labels:dateLabels,datasets:makeCumDatasets()},options:lineOpts});
-
   campNames.forEach((camp,idx)=>{
     const rows=data.filter(d=>d.camp===camp).sort((a,b)=>a.data.localeCompare(b.data));
     const labels=rows.map(d=>{const[y,m,day]=d.data.split('-');return`${day}/${m}`;});
     const color=getCampColor(camp);
-    chartInstances[`cp${idx}`]=new Chart(document.getElementById(`c-camp-${idx}`),{
-      type:'line',
-      data:{labels,datasets:[{label:metricLabels[mk],data:rows.map(d=>d[mk]),borderColor:color,backgroundColor:color+'22',borderWidth:2,pointRadius:5,pointHoverRadius:7,tension:.35,fill:true}]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx=>{const r=rows[ctx[0].dataIndex];return r.trans+' ('+labels[ctx[0].dataIndex]+')';},label:ctx=>` ${fmt(ctx.raw)}`}}},scales:{x:{ticks:{color:tickColor,font:{size:11},autoSkip:false,maxRotation:45},grid:{display:false}},y:{ticks:{color:tickColor,font:{size:11},callback:v=>fmtK(v)},grid:{color:gridColor}}}}
-    });
+    chartInstances[`cp${idx}`]=new Chart(document.getElementById(`c-camp-${idx}`),{type:'line',data:{labels,datasets:[{label:metricLabels[mk],data:rows.map(d=>d[mk]),borderColor:color,backgroundColor:color+'22',borderWidth:2,pointRadius:5,pointHoverRadius:7,tension:.35,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:ctx=>{const r=rows[ctx[0].dataIndex];return r.trans+' ('+labels[ctx[0].dataIndex]+')';},label:ctx=>` ${fmt(ctx.raw)}`}}},scales:{x:{ticks:{color:tickColor,font:{size:11},autoSkip:false,maxRotation:45},grid:{display:false}},y:{ticks:{color:tickColor,font:{size:11},callback:v=>fmtK(v)},grid:{color:gridColor}}}}});
   });
 }
-function setEvoMetric(m){ evoMetric=m; renderEvolucao(); }
+function setEvoMetric(m){evoMetric=m;renderEvolucao();}
 
 // ─── TABELA ───────────────────────────────────────────────────────────────────
 const tableState={camp:'',excl:'',text:''};
 function renderTabela(){
+  const isAuth=!!currentUser;
   const campNames=[...new Set(data.map(d=>d.camp))].sort();
   let filtered=data.filter(d=>{
-    if(tableState.camp&&d.camp!==tableState.camp) return false;
-    if(tableState.excl&&d.exclusivo!==tableState.excl) return false;
-    if(tableState.text){const q=tableState.text.toLowerCase();if(!d.trans.toLowerCase().includes(q)&&!d.camp.toLowerCase().includes(q)) return false;}
+    if(tableState.camp&&d.camp!==tableState.camp)return false;
+    if(tableState.excl&&d.exclusivo!==tableState.excl)return false;
+    if(tableState.text){const q=tableState.text.toLowerCase();if(!d.trans.toLowerCase().includes(q)&&!d.camp.toLowerCase().includes(q))return false;}
     return true;
   }).sort((a,b)=>b.data.localeCompare(a.data)||b.views-a.views);
-
   const campOpts=campNames.map(c=>`<option value="${c}"${tableState.camp===c?' selected':''}>${c}</option>`).join('');
   document.getElementById('pane-tabela').innerHTML=`
     <div class="filter-row">
@@ -525,9 +614,9 @@ function renderTabela(){
       <span class="count-badge">${filtered.length} transmissão(ões)</span>
     </div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Data</th><th>Campeonato</th><th>Transmissão</th><th style="text-align:right">Views</th><th style="text-align:right">Pico ao vivo</th><th>Exclusivo</th><th style="text-align:right">Inscritos</th><th></th></tr></thead>
+      <thead><tr><th>Data</th><th>Campeonato</th><th>Transmissão</th><th style="text-align:right">Views</th><th style="text-align:right">Pico ao vivo</th><th>Exclusivo</th><th style="text-align:right">Inscritos</th>${isAuth?'<th></th>':''}</tr></thead>
       <tbody>
-        ${filtered.length===0?`<tr><td colspan="8"><div class="empty">Nenhuma transmissão encontrada</div></td></tr>`:''}
+        ${filtered.length===0?`<tr><td colspan="${isAuth?8:7}"><div class="empty">Nenhuma transmissão encontrada</div></td></tr>`:''}
         ${filtered.map(d=>{const[y,m,day]=d.data.split('-');const col=getCampColor(d.camp);return`<tr>
           <td style="color:rgba(255,255,255,.4);font-size:12px;white-space:nowrap">${day}/${m}/${y}</td>
           <td><span class="camp-tag" style="background:${col}22;color:${col};border:1px solid ${col}33">${d.camp}</span></td>
@@ -536,10 +625,7 @@ function renderTabela(){
           <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(d.pico)}</td>
           <td><span class="badge ${d.exclusivo==='Sim'?'badge-excl':'badge-shared'}">${d.exclusivo}</span></td>
           <td style="text-align:right;font-variant-numeric:tabular-nums">${fmt(d.inscritos)}</td>
-          <td style="white-space:nowrap;display:flex;gap:4px">
-            <button class="btn sm" onclick="editEntry(${d.id})">Editar</button>
-            <button class="btn sm danger" onclick="deleteEntry(${d.id})">Excluir</button>
-          </td>
+          ${isAuth?`<td style="white-space:nowrap;display:flex;gap:4px"><button class="btn sm" onclick="editEntry(${d.id})">Editar</button><button class="btn sm danger" onclick="deleteEntry(${d.id})">Excluir</button></td>`:''}
         </tr>`;}).join('')}
       </tbody>
     </table></div>
@@ -551,31 +637,106 @@ function renderTabela(){
 
 // ─── CAMPEONATOS ──────────────────────────────────────────────────────────────
 function renderCampeonatos(){
+  const isAuth=!!currentUser;
   const counts={};data.forEach(d=>{counts[d.camp]=(counts[d.camp]||0)+1;});
   const cardsHtml=camps.map(c=>`
     <div class="camp-card">
       <div class="camp-color-dot" style="background:${c.cor}"></div>
       <div style="flex:1"><div class="camp-card-name">${c.nome}</div><div class="camp-card-count">${counts[c.nome]||0} transmissão(ões)</div></div>
-      <div style="display:flex;gap:6px">
-        <button class="btn sm" onclick="editCamp('${c.nome.replace(/'/g,"\\'")}')">Editar cor</button>
-        <button class="btn sm danger" onclick="deleteCamp('${c.nome.replace(/'/g,"\\'")}')">×</button>
-      </div>
+      ${isAuth?`<div style="display:flex;gap:6px"><button class="btn sm" onclick="editCamp('${c.nome.replace(/'/g,"\\'")}')">Editar cor</button><button class="btn sm danger" onclick="deleteCamp('${c.nome.replace(/'/g,"\\'")}')">×</button></div>`:''}
     </div>`).join('');
   document.getElementById('pane-campeonatos').innerHTML=`
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <div class="section-title" style="margin-bottom:0">${camps.length} campeonato(s)</div>
-      <button class="btn primary" onclick="openCampModal()">+ Novo campeonato</button>
+      ${isAuth?'<button class="btn primary" onclick="openCampModal()">+ Novo campeonato</button>':''}
     </div>
     <div class="camps-grid">${cardsHtml||'<div class="empty">Nenhum campeonato cadastrado.</div>'}</div>
   `;
 }
+
+// ─── USUÁRIOS (admin) ─────────────────────────────────────────────────────────
+async function renderUsuarios(){
+  document.getElementById('pane-usuarios').innerHTML=`<div class="empty"><div class="spinner" style="margin:0 auto 12px"></div>Carregando usuários...</div>`;
+  let profiles=[];
+  try{profiles=await sbFetch('profiles?select=*&order=created_at.asc');}catch(e){console.error(e);}
+  const cardsHtml=profiles.map(p=>{
+    const initials=p.email?p.email[0].toUpperCase():'?';
+    const isMe=p.id===currentUser?.id;
+    const dt=p.created_at?new Date(p.created_at).toLocaleDateString('pt-BR'):'';
+    return`<div class="user-card">
+      <div class="user-avatar">${initials}</div>
+      <div style="flex:1;min-width:0">
+        <div class="user-email">${p.email||'—'}</div>
+        <div class="user-meta">${dt}${isMe?' · você':''}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">
+        <span class="user-chip-role ${p.is_admin?'role-admin':'role-editor'}">${p.is_admin?'Admin':'Editor'}</span>
+        ${!isMe?`<button class="btn sm danger" style="margin-top:4px" onclick="deleteUser('${p.id}','${p.email}')">Remover</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('pane-usuarios').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="section-title" style="margin-bottom:0">${profiles.length} usuário(s)</div>
+      <button class="btn primary" onclick="openUserModal()">+ Novo usuário</button>
+    </div>
+    <div class="users-grid">${cardsHtml||'<div class="empty">Nenhum usuário encontrado.</div>'}</div>
+  `;
+}
+
+async function saveNewUser(){
+  const email=document.getElementById('nu-email').value.trim();
+  const password=document.getElementById('nu-password').value;
+  const isAdmin=document.getElementById('nu-role').value==='true';
+  const errEl=document.getElementById('user-error');
+  errEl.style.display='none';
+  if(!email||!password){errEl.textContent='Preencha e-mail e senha.';errEl.style.display='block';return;}
+  if(password.length<6){errEl.textContent='A senha precisa ter pelo menos 6 caracteres.';errEl.style.display='block';return;}
+  document.getElementById('user-saving').style.display='block';
+  document.getElementById('btn-save-user').disabled=true;
+  try{
+    // create user via admin API (service role needed — use signup instead)
+    const res=await sbAuth('signup',{email,password});
+    // set is_admin via profiles upsert
+    if(isAdmin){
+      await sbFetch('profiles?id=eq.'+res.user.id,{method:'PATCH',body:JSON.stringify({is_admin:true})});
+    }
+    closeUserModal();
+    renderUsuarios();
+  }catch(e){
+    errEl.textContent=e.message;
+    errEl.style.display='block';
+  }
+  document.getElementById('user-saving').style.display='none';
+  document.getElementById('btn-save-user').disabled=false;
+}
+
+async function deleteUser(id,email){
+  if(!confirm(`Remover o usuário ${email}?`)) return;
+  try{
+    await sbFetch('profiles?id=eq.'+id,{method:'DELETE'});
+    renderUsuarios();
+  }catch(e){alert('Erro ao remover: '+e.message);}
+}
+
+function openUserModal(){
+  document.getElementById('nu-email').value='';
+  document.getElementById('nu-password').value='';
+  document.getElementById('nu-role').value='false';
+  document.getElementById('user-error').style.display='none';
+  document.getElementById('user-saving').style.display='none';
+  document.getElementById('btn-save-user').disabled=false;
+  document.getElementById('user-modal-backdrop').style.display='flex';
+}
+function closeUserModal(){document.getElementById('user-modal-backdrop').style.display='none';}
+function closeUserBackdrop(e){if(e.target===document.getElementById('user-modal-backdrop'))closeUserModal();}
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 function switchTab(tab,el){
   activeTab=tab;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
-  ['dashboard','evolucao','tabela','campeonatos'].forEach(p=>{document.getElementById('pane-'+p).style.display=p===tab?'':'none';});
+  ['dashboard','evolucao','tabela','campeonatos','usuarios'].forEach(p=>{document.getElementById('pane-'+p).style.display=p===tab?'':'none';});
   refreshCurrentTab();
 }
 
@@ -588,18 +749,16 @@ function openModal(id=null){
   if(id){
     const d=data.find(x=>x.id===id);
     if(d){sel.value=d.camp;document.getElementById('f-trans').value=d.trans;document.getElementById('f-data').value=d.data;document.getElementById('f-excl').value=d.exclusivo;document.getElementById('f-views').value=d.views;document.getElementById('f-pico').value=d.pico;document.getElementById('f-inscritos').value=d.inscritos;}
-  } else {
-    document.getElementById('f-trans').value='';
-    document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
-    document.getElementById('f-excl').value='Não';
-    document.getElementById('f-views').value='';document.getElementById('f-pico').value='';document.getElementById('f-inscritos').value='';
+  }else{
+    document.getElementById('f-trans').value='';document.getElementById('f-data').value=new Date().toISOString().slice(0,10);
+    document.getElementById('f-excl').value='Não';document.getElementById('f-views').value='';document.getElementById('f-pico').value='';document.getElementById('f-inscritos').value='';
   }
   document.getElementById('modal-saving').style.display='none';
   document.getElementById('btn-save-entry').disabled=false;
   document.getElementById('modal-backdrop').style.display='flex';
 }
-function closeModal(){ document.getElementById('modal-backdrop').style.display='none'; }
-function closeBackdrop(e){ if(e.target===document.getElementById('modal-backdrop')) closeModal(); }
+function closeModal(){document.getElementById('modal-backdrop').style.display='none';}
+function closeBackdrop(e){if(e.target===document.getElementById('modal-backdrop'))closeModal();}
 
 async function saveEntry(){
   const camp=document.getElementById('f-camp').value;
@@ -610,176 +769,138 @@ async function saveEntry(){
   const pico=parseInt(document.getElementById('f-pico').value)||0;
   const inscritos=parseInt(document.getElementById('f-inscritos').value)||0;
   if(!camp||!trans||!dt){alert('Preencha campeonato, transmissão e data.');return;}
-
   document.getElementById('modal-saving').style.display='block';
   document.getElementById('btn-save-entry').disabled=true;
   setSyncStatus('loading','Salvando...');
-
-  try {
+  try{
     if(editId){
-      const row = await sbFetch(`transmissoes?id=eq.${editId}`,{
-        method:'PATCH',
-        body:JSON.stringify({camp,trans,data:dt,exclusivo:excl,views,pico,inscritos})
-      });
+      await sbFetch(`transmissoes?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify({camp,trans,data:dt,exclusivo:excl,views,pico,inscritos})});
       const idx=data.findIndex(d=>d.id===editId);
-      if(idx>=0) data[idx]={id:editId,camp,trans,data:dt,exclusivo:excl,views,pico,inscritos};
-    } else {
+      if(idx>=0)data[idx]={id:editId,camp,trans,data:dt,exclusivo:excl,views,pico,inscritos};
+    }else{
       const rows=await sbFetch('transmissoes',{method:'POST',body:JSON.stringify({camp,trans,data:dt,exclusivo:excl,views,pico,inscritos})});
-      const inserted=rows[0];
-      data.push({id:inserted.id,camp,trans,data:dt,exclusivo:excl,views,pico,inscritos});
+      data.push({id:rows[0].id,camp,trans,data:dt,exclusivo:excl,views,pico,inscritos});
     }
-    cacheData();
-    setSyncStatus('ok','Sincronizado');
-  } catch(e) {
+    cacheData();setSyncStatus('ok','Sincronizado');
+  }catch(e){
     console.error('saveEntry error:',e);
-    // fallback: save locally only
-    if(editId){
-      const idx=data.findIndex(d=>d.id===editId);
-      if(idx>=0) data[idx]={...data[idx],camp,trans,data:dt,exclusivo:excl,views,pico,inscritos};
-    } else {
-      const newId=Math.max(0,...data.map(d=>d.id))+1;
-      data.push({id:newId,camp,trans,data:dt,exclusivo:excl,views,pico,inscritos});
-    }
-    cacheData();
-    setSyncStatus('err','Salvo offline');
+    if(editId){const idx=data.findIndex(d=>d.id===editId);if(idx>=0)data[idx]={...data[idx],camp,trans,data:dt,exclusivo:excl,views,pico,inscritos};}
+    else{const newId=Math.max(0,...data.map(d=>d.id))+1;data.push({id:newId,camp,trans,data:dt,exclusivo:excl,views,pico,inscritos});}
+    cacheData();setSyncStatus('err','Salvo offline');
   }
-  closeModal();
-  refreshCurrentTab();
+  closeModal();refreshCurrentTab();
 }
-
-function editEntry(id){ openModal(id); }
-
+function editEntry(id){openModal(id);}
 async function deleteEntry(id){
   const d=data.find(x=>x.id===id);
-  if(!d||!confirm(`Excluir "${d.trans}"?`)) return;
+  if(!d||!confirm(`Excluir "${d.trans}"?`))return;
   setSyncStatus('loading','Excluindo...');
-  try {
-    await sbFetch(`transmissoes?id=eq.${id}`,{method:'DELETE'});
-    setSyncStatus('ok','Sincronizado');
-  } catch(e) {
-    console.error('deleteEntry error:',e);
-    setSyncStatus('err','Erro ao excluir na nuvem');
-  }
-  data=data.filter(x=>x.id!==id);
-  cacheData();
-  renderTabela();
+  try{await sbFetch(`transmissoes?id=eq.${id}`,{method:'DELETE'});setSyncStatus('ok','Sincronizado');}
+  catch(e){console.error(e);setSyncStatus('err','Erro ao excluir');}
+  data=data.filter(x=>x.id!==id);cacheData();renderTabela();
 }
 
 // ─── MODAL CAMPEONATO ─────────────────────────────────────────────────────────
 function openCampModal(nome=null){
   editCampNome=nome;
   document.getElementById('camp-modal-title').textContent=nome?'Editar campeonato':'Novo campeonato';
-  if(nome){
-    const c=camps.find(x=>x.nome===nome);
-    document.getElementById('fc-nome').value=nome;
-    document.getElementById('fc-nome').disabled=true;
-    document.getElementById('fc-cor').value=c?c.cor:'#378ADD';
-  } else {
-    document.getElementById('fc-nome').value='';
-    document.getElementById('fc-nome').disabled=false;
-    document.getElementById('fc-cor').value='#378ADD';
-  }
+  if(nome){const c=camps.find(x=>x.nome===nome);document.getElementById('fc-nome').value=nome;document.getElementById('fc-nome').disabled=true;document.getElementById('fc-cor').value=c?c.cor:'#378ADD';}
+  else{document.getElementById('fc-nome').value='';document.getElementById('fc-nome').disabled=false;document.getElementById('fc-cor').value='#378ADD';}
   document.getElementById('camp-saving').style.display='none';
   document.getElementById('btn-save-camp').disabled=false;
   document.getElementById('camp-modal-backdrop').style.display='flex';
 }
-function closeCampModal(){ document.getElementById('camp-modal-backdrop').style.display='none'; }
-function closeCampBackdrop(e){ if(e.target===document.getElementById('camp-modal-backdrop')) closeCampModal(); }
-function editCamp(nome){ openCampModal(nome); }
+function closeCampModal(){document.getElementById('camp-modal-backdrop').style.display='none';}
+function closeCampBackdrop(e){if(e.target===document.getElementById('camp-modal-backdrop'))closeCampModal();}
+function editCamp(nome){openCampModal(nome);}
 
 async function deleteCamp(nome){
   const used=data.some(d=>d.camp===nome);
-  if(!confirm(used?`O campeonato "${nome}" tem transmissões. Excluir mesmo assim?`:`Excluir "${nome}"?`)) return;
+  if(!confirm(used?`O campeonato "${nome}" tem transmissões. Excluir mesmo assim?`:`Excluir "${nome}"?`))return;
   setSyncStatus('loading','Excluindo...');
-  try {
-    await fetch(SB_URL+'/rest/v1/campeonatos?nome=eq.'+encodeURIComponent(nome), {
-      method:'DELETE',
-      headers:{ 'apikey':SB_KEY, 'Authorization':'Bearer '+SB_KEY, 'Prefer':'return=minimal' }
-    });
+  try{
+    await fetch(SB_URL+'/rest/v1/campeonatos?nome=eq.'+encodeURIComponent(nome),{method:'DELETE',headers:{apikey:SB_KEY,'Authorization':'Bearer '+accessToken,'Prefer':'return=minimal'}});
     setSyncStatus('ok','Sincronizado');
-  } catch(e) {
-    console.error('deleteCamp error:',e);
-    setSyncStatus('err','Erro ao excluir na nuvem');
-  }
-  camps=camps.filter(c=>c.nome!==nome);
-  cacheCamps();
-  renderCampeonatos();
+  }catch(e){console.error(e);setSyncStatus('err','Erro ao excluir');}
+  camps=camps.filter(c=>c.nome!==nome);cacheCamps();renderCampeonatos();
 }
 
 async function saveCamp(){
   const nome=document.getElementById('fc-nome').value.trim();
   const cor=document.getElementById('fc-cor').value;
   if(!nome){alert('Digite o nome do campeonato.');return;}
-
   document.getElementById('camp-saving').style.display='block';
   document.getElementById('btn-save-camp').disabled=true;
   setSyncStatus('loading','Salvando...');
-
-  try {
+  try{
     if(editCampNome){
       await sbFetch(`campeonatos?nome=eq.${encodeURIComponent(editCampNome)}`,{method:'PATCH',body:JSON.stringify({cor})});
-      const idx=camps.findIndex(c=>c.nome===editCampNome);
-      if(idx>=0) camps[idx].cor=cor;
-    } else {
+      const idx=camps.findIndex(c=>c.nome===editCampNome);if(idx>=0)camps[idx].cor=cor;
+    }else{
       if(camps.find(c=>c.nome===nome)){alert('Esse campeonato já existe.');document.getElementById('camp-saving').style.display='none';document.getElementById('btn-save-camp').disabled=false;return;}
       await sbFetch('campeonatos',{method:'POST',body:JSON.stringify({nome,cor})});
       camps.push({nome,cor});
     }
-    cacheCamps();
-    setSyncStatus('ok','Sincronizado');
-  } catch(e) {
-    console.error('saveCamp error:',e);
-    if(editCampNome){const idx=camps.findIndex(c=>c.nome===editCampNome);if(idx>=0) camps[idx].cor=cor;}
-    else{if(!camps.find(c=>c.nome===nome)) camps.push({nome,cor});}
-    cacheCamps();
-    setSyncStatus('err','Salvo offline');
+    cacheCamps();setSyncStatus('ok','Sincronizado');
+  }catch(e){
+    if(editCampNome){const idx=camps.findIndex(c=>c.nome===editCampNome);if(idx>=0)camps[idx].cor=cor;}
+    else if(!camps.find(c=>c.nome===nome))camps.push({nome,cor});
+    cacheCamps();setSyncStatus('err','Salvo offline');
   }
-  closeCampModal();
-  renderCampeonatos();
+  closeCampModal();renderCampeonatos();
 }
 
 // ─── EXPORT / IMPORT ─────────────────────────────────────────────────────────
 function exportData(){
-  const payload=JSON.stringify({data,camps},null,2);
   const a=document.createElement('a');
-  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(payload);
-  a.download='uol-esporte-backup-'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();
+  a.href='data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify({data,camps},null,2));
+  a.download='uol-esporte-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();
 }
 async function importData(e){
+  if(!currentUser){alert('Faça login para importar dados.');return;}
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=async ev=>{
     try{
       const parsed=JSON.parse(ev.target.result);
       if(!parsed.data||!Array.isArray(parsed.data)){alert('Arquivo inválido.');return;}
-      if(!confirm('Isso vai substituir todos os dados atuais no banco. Continuar?')) return;
+      if(!confirm('Isso vai substituir todos os dados no banco. Continuar?'))return;
       setSyncStatus('loading','Importando...');
-      // delete all existing
       await sbFetch('transmissoes?id=gt.0',{method:'DELETE'}).catch(()=>{});
       await sbFetch('campeonatos?nome=neq.__none__',{method:'DELETE'}).catch(()=>{});
-      // insert new
-      if(parsed.camps?.length) await sbFetch('campeonatos',{method:'POST',body:JSON.stringify(parsed.camps.map(c=>({nome:c.nome,cor:c.cor})))}).catch(()=>{});
+      if(parsed.camps?.length)await sbFetch('campeonatos',{method:'POST',body:JSON.stringify(parsed.camps.map(c=>({nome:c.nome,cor:c.cor})))}).catch(()=>{});
       const rows=parsed.data.map(d=>({camp:d.camp,trans:d.trans,data:d.data,views:d.views,pico:d.pico,exclusivo:d.exclusivo,inscritos:d.inscritos}));
       const inserted=await sbFetch('transmissoes',{method:'POST',body:JSON.stringify(rows)});
       data=inserted.map(r=>({id:r.id,camp:r.camp,trans:r.trans,data:r.data,views:r.views,pico:r.pico,exclusivo:r.exclusivo,inscritos:r.inscritos}));
       camps=parsed.camps||DEFAULT_CAMPS.map(c=>({...c}));
-      cacheData();cacheCamps();
-      setSyncStatus('ok','Importado com sucesso');
-      refreshCurrentTab();
-      alert('Dados importados com sucesso!');
+      cacheData();cacheCamps();setSyncStatus('ok','Importado');
+      refreshCurrentTab();alert('Dados importados com sucesso!');
     }catch(err){alert('Erro ao importar: '+err.message);setSyncStatus('err','Erro na importação');}
   };
-  reader.readAsText(file);
-  e.target.value='';
+  reader.readAsText(file);e.target.value='';
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 async function init(){
-  await loadFromSupabase();
+  // try to restore session
+  const saved=loadSession();
+  if(saved?.access_token){
+    // verify token still valid
+    try{
+      const res=await fetch(SB_URL+'/auth/v1/user',{headers:{apikey:SB_KEY,'Authorization':'Bearer '+saved.access_token}});
+      if(res.ok){
+        const user=await res.json();
+        accessToken=saved.access_token;
+        currentUser=user;
+        await afterLogin();
+        return;
+      }
+    }catch(e){}
+    clearSession();
+  }
+  // no valid session → show login
   document.getElementById('loading-screen').style.display='none';
-  document.getElementById('app').style.display='';
-  renderDashboard();
+  document.getElementById('login-screen').style.display='flex';
 }
 init();
 </script>
